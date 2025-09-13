@@ -12,7 +12,7 @@
     <div class="container">
       <a class="navbar-brand fw-bold" href="#">Invernadero Mini · Monitoreo</a>
       <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary btn-sm" href="../control/index.html">Control</a>
+        <a class="btn btn-outline-secondary btn-sm" href="../index.html">Control</a>
         <a class="btn btn-outline-secondary btn-sm" href="../admin/index.html">Admin</a>
       </div>
     </div>
@@ -34,13 +34,13 @@
     <div class="container">
       <small class="text-muted">
         Proyecto IoT · Invernadero Mini <br>
-        Desarrollado por <strong>Tu Nombre</strong> · 2025
+        Desarrollado por <strong>Rafael (manin)</strong> · 2025
       </small>
     </div>
   </footer>
 
-  <!-- Reutilizamos constantes y helpers desde api.js -->
-  <script src="../control/js/api.js"></script>
+  <!-- Importa helpers desde la raíz -->
+  <script src="../js/api.js"></script>
   <script>
   const POLL_MS = 2000;
 
@@ -53,12 +53,10 @@
   function renderCards(list){
     const el = document.getElementById("cards");
     el.innerHTML = (list||[]).map(d=>{
-      // encabezado: ICONO (emoji)
-      const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";
-      // estatus: IMAGEN
-      const imgFile = statusImageFile(d.status);
+      const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";    // encabezado = icono
+      const imgFile = statusImageFile(d.status);          // estatus = imagen
       const statusHTML = imgFile
-        ? `<img src="../control/img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
+        ? `<img src="../img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
         : `<span class="badge text-bg-secondary">—</span>`;
       const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
       return `<div class="col-12 col-md-6 col-lg-4">
@@ -87,14 +85,12 @@
         const when = x.ts ? new Date(x.ts).toLocaleString() : "—";
         const imgFile = statusImageFile(x.action);
         const stateHTML = imgFile
-          ? `<img src="../control/img/${imgFile}" alt="${x.action}" style="height:28px">`
+          ? `<img src="../img/${imgFile}" alt="${x.action}" style="height:28px">`
           : (x.action || "—");
         return `<tr><td>${when}</td><td>${stateHTML}</td></tr>`;
       }).join("") || `<tr><td colspan="2" class="text-muted">Sin historial</td></tr>`;
 
-      // En encabezado NO imagen, solo icono
       const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";
-
       return `<div class="card shadow-sm mb-3">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
@@ -123,15 +119,5 @@
   tick();
   setInterval(tick, POLL_MS);
   </script>
-
-  <footer class="bg-white border-top text-center py-3 mt-4">
-  <div class="container">
-    <small class="text-muted">
-      Proyecto IoT · Invernadero Mini <br>
-      Desarrollado por <strong>Rafael (Manin)</strong> · 2025
-    </small>
-  </div>
-</footer>
-
 </body>
 </html>

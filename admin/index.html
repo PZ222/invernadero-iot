@@ -11,7 +11,7 @@
   <div class="container">
     <a class="navbar-brand fw-bold" href="#">Invernadero Mini · Admin</a>
     <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary btn-sm" href="../control/index.html">Control</a>
+      <a class="btn btn-outline-secondary btn-sm" href="../index.html">Control</a>
       <a class="btn btn-outline-secondary btn-sm" href="../monitoreo/index.html">Monitoreo</a>
     </div>
   </div>
@@ -69,6 +69,15 @@
     </div>
   </div>
 </main>
+
+<footer class="bg-white border-top text-center py-3 mt-4">
+  <div class="container">
+    <small class="text-muted">
+      Proyecto IoT · Invernadero Mini <br>
+      Desarrollado por <strong>Rafael (manin)</strong> · 2025
+    </small>
+  </div>
+</footer>
 
 <script>
 const BASE = "https://68bb0e9184055bce63f10925.mockapi.io/api/v1/Invernadero_IoT";
@@ -157,7 +166,7 @@ form.onsubmit = async (e)=>{
   };
   if (!devId.value) {
     payload.createdAt = now;
-    payload.statusLog = []; // historial vacío al crear
+    payload.statusLog = [];
     await apiPost(payload);
   } else {
     await apiPut(devId.value, payload);
@@ -171,13 +180,5 @@ reloadBtn.onclick = load;
 load();
 </script>
 </body>
-<footer class="bg-white border-top text-center py-3 mt-4">
-  <div class="container">
-    <small class="text-muted">
-      Proyecto IoT · Invernadero Mini <br>
-      Desarrollado por <strong>Rafael (Manin)</strong> · 2025
-    </small>
-  </div>
-</footer>
-
 </html>
+
