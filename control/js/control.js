@@ -27,6 +27,7 @@ function applyFilters(list) {
   });
 }
 
+// Renderiza tarjetas
 function renderDevices(list) {
   if (!list.length) {
     gridEl.innerHTML = `
@@ -37,15 +38,21 @@ function renderDevices(list) {
   }
 
   gridEl.innerHTML = list.map(d => {
-    const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";
-    const actions = ACTIONS_BY_KIND[d.deviceKind] ?? [];
-    const buttons = actions.map(a => `
+    const actions = (ACTIONS_BY_KIND[d.deviceKind] ?? []).map(a => `
       <button class="btn btn-sm btn-outline-primary btn-action" data-action="${a}" data-id="${d.id}">
         ${a}
       </button>
     `).join("");
 
-    const statusHTML = statusBadge(d.status);
+    // Solo IMAGEN en la sección de Estatus
+    const imgFile = statusImageFile(d.status);
+    const statusHTML = imgFile
+      ? `<img src="./img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
+      : `<span class="badge text-bg-secondary">—</span>`;
+
+    // Encabezado con ICONO (emoji), NO imagen
+    const headerIcon = ICON_BY_KIND[d.deviceKind] ?? "📟";
+
     const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
 
     return `
@@ -53,7 +60,7 @@ function renderDevices(list) {
         <div class="card card-device shadow-sm">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <div class="device-icon">${icon}</div>
+              <div class="device-icon" style="font-size:2rem">${headerIcon}</div>
               <div class="text-end">
                 <div class="small text-muted">Tipo</div>
                 <div class="fw-medium">${d.deviceKind || "—"}</div>
@@ -61,13 +68,13 @@ function renderDevices(list) {
             </div>
             <h2 class="h5">${d.name || "(sin nombre)"}</h2>
 
-            <div class="d-flex align-items-center gap-2 mt-2">
-              <span class="small text-muted">Estatus:</span>
+            <div class="mt-2">
+              <span class="small text-muted me-1">Estatus:</span>
               ${statusHTML}
             </div>
 
             <div class="d-flex flex-wrap gap-2 mt-3">
-              ${buttons || '<span class="text-muted small">Sin acciones</span>'}
+              ${actions || '<span class="text-muted small">Sin acciones</span>'}
             </div>
 
             <div class="d-flex justify-content-between mt-3">
@@ -80,7 +87,6 @@ function renderDevices(list) {
     `;
   }).join("");
 
-  // Event listeners para botones de acción
   gridEl.querySelectorAll("button[data-action]").forEach(btn => {
     btn.addEventListener("click", onActionClick);
   });
@@ -88,10 +94,7 @@ function renderDevices(list) {
 
 async function loadDevices() {
   try {
-    // TIP: Puedes filtrar por tipo si quieres: ?deviceKind=vent
     const list = await apiGet("");
-    // En este proyecto, el recurso es solo "dispositivos", no hay labs.
-    // Si en tu recurso tienes mezclados, podrías filtrar aquí por type === "device".
     devices = Array.isArray(list) ? list : [];
     renderDevices(applyFilters(devices));
   } catch (e) {
@@ -108,35 +111,26 @@ async function onActionClick(e) {
   const dev = devices.find(d => String(d.id) === String(id));
   if (!dev) return;
 
-  // Reglas lógicas simples (ejemplo):
-  // - Ventila no puede "abrir" si ya está "abierta"
-  // - Pump intensivo bloquea "vent" cerrar (ejemplo de interacción)
-  const now = new Date().toISOString();
-  let newStatus = action;
-
-  // Normaliza estados
-  const s = (dev.status || "").toLowerCase();
+  // Reglas lógicas simples para ventila
+  const s = String(dev.status || "").toLowerCase();
   if (dev.deviceKind === "vent") {
-    if (action === "abrir" && s.includes("abierta")) {
-      showToast("La ventila ya está abierta");
-      return;
-    }
-    if (action === "cerrar" && s.includes("cerrada")) {
-      showToast("La ventila ya está cerrada");
-      return;
-    }
+    if (action === "abrir" && (s.includes("abierta") || s === "abrir")) { showToast("La ventila ya está abierta"); return; }
+    if (action === "cerrar" && (s.includes("cerrada") || s === "cerrar")) { showToast("La ventila ya está cerrada"); return; }
   }
 
   try {
+    const nowISO = new Date().toISOString();
+    const prevLog = Array.isArray(dev.statusLog) ? dev.statusLog.slice(-9) : []; // conserva 9 previos
+    const nextLog = [...prevLog, { ts: nowISO, action }];
+
     const bodyUpdate = {
-      status: newStatus,
-      lastUpdated: now,
-      // Si tu recurso tiene statusLog (array), puedes actualizarlo así:
-      // statusLog: [...(dev.statusLog || []).slice(-9), { ts: now, action: newStatus }]
+      status: action,
+      lastUpdated: nowISO,
+      statusLog: nextLog
     };
+
     await apiPut(id, bodyUpdate);
     showToast(`Acción enviada: ${action}`);
-    // Refresca el listado para ver el nuevo estado
     await loadDevices();
   } catch (err) {
     console.error(err);
@@ -144,7 +138,7 @@ async function onActionClick(e) {
   }
 }
 
-// UI events
+// Eventos UI
 searchEl.addEventListener("input", () => renderDevices(applyFilters(devices)));
 kindEl.addEventListener("change", () => renderDevices(applyFilters(devices)));
 reloadEl.addEventListener("click", loadDevices);

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Invernadero Mini · Monitoreo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>.device-icon{font-size:2rem}</style>
+</head>
+<body class="bg-light">
+  <nav class="navbar bg-white border-bottom sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">Invernadero Mini · Monitoreo</a>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="../control/index.html">Control</a>
+        <a class="btn btn-outline-secondary btn-sm" href="../admin/index.html">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 m-0">Estatus en tiempo real</h1>
+      <small class="text-muted">Refresco: 2s</small>
+    </div>
+
+    <div id="cards" class="row g-3 mb-4"></div>
+
+    <h2 class="h6">Historial de últimos 10 estatus</h2>
+    <div id="tables"></div>
+  </main>
+
+  <footer class="bg-white border-top text-center py-3 mt-4">
+    <div class="container">
+      <small class="text-muted">
+        Proyecto IoT · Invernadero Mini <br>
+        Desarrollado por <strong>Tu Nombre</strong> · 2025
+      </small>
+    </div>
+  </footer>
+
+  <!-- Reutilizamos constantes y helpers desde api.js -->
+  <script src="../control/js/api.js"></script>
+  <script>
+  const POLL_MS = 2000;
+
+  async function fetchAll(){
+    const r = await fetch(BASE_URL, {cache:"no-store"});
+    if(!r.ok) throw new Error("GET fail");
+    return r.json();
+  }
+
+  function renderCards(list){
+    const el = document.getElementById("cards");
+    el.innerHTML = (list||[]).map(d=>{
+      // encabezado: ICONO (emoji)
+      const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";
+      // estatus: IMAGEN
+      const imgFile = statusImageFile(d.status);
+      const statusHTML = imgFile
+        ? `<img src="../control/img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
+        : `<span class="badge text-bg-secondary">—</span>`;
+      const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
+      return `<div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div class="device-icon">${icon}</div>
+              <div class="text-end">
+                <div class="small text-muted">Tipo</div>
+                <div class="fw-medium">${d.deviceKind||"—"}</div>
+              </div>
+            </div>
+            <h2 class="h5 mt-2">${d.name||"(sin nombre)"}</h2>
+            <div class="mt-2">Estatus: ${statusHTML}</div>
+            <div class="small text-muted mt-2">Actualizado: ${updated}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function renderTables(list){
+    const wrap = document.getElementById("tables");
+    wrap.innerHTML = (list||[]).map(d=>{
+      const rows = (d.statusLog||[]).slice(-10).reverse().map(x=>{
+        const when = x.ts ? new Date(x.ts).toLocaleString() : "—";
+        const imgFile = statusImageFile(x.action);
+        const stateHTML = imgFile
+          ? `<img src="../control/img/${imgFile}" alt="${x.action}" style="height:28px">`
+          : (x.action || "—");
+        return `<tr><td>${when}</td><td>${stateHTML}</td></tr>`;
+      }).join("") || `<tr><td colspan="2" class="text-muted">Sin historial</td></tr>`;
+
+      // En encabezado NO imagen, solo icono
+      const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";
+
+      return `<div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="h6 m-0">${d.name||"(sin nombre)"} · <span class="text-muted">${d.deviceKind||"—"}</span></h3>
+            <span style="font-size:1.4rem">${icon}</span>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm">
+              <thead><tr><th>Fecha/Hora</th><th>Acción</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  async function tick(){
+    try{
+      const data = await fetchAll();
+      renderCards(data);
+      renderTables(data);
+    }catch(e){ console.error(e); }
+  }
+
+  tick();
+  setInterval(tick, POLL_MS);
+  </script>
+
+  <footer class="bg-white border-top text-center py-3 mt-4">
+  <div class="container">
+    <small class="text-muted">
+      Proyecto IoT · Invernadero Mini <br>
+      Desarrollado por <strong>Rafael (Manin)</strong> · 2025
+    </small>
+  </div>
+</footer>
+
+</body>
+</html>
