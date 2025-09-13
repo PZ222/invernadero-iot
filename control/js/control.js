@@ -46,9 +46,11 @@ function renderDevices(list) {
 
     // Solo IMAGEN en la sección de Estatus
     const imgFile = statusImageFile(d.status);
-    const statusHTML = imgFile
-      ? `<img src="./img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
-      : `<span class="badge text-bg-secondary">—</span>`;
+// Donde armas el HTML del estatus:
+const statusHTML = imgFile
+  ? `<img src="control/img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
+  : `<span class="badge text-bg-secondary">—</span>`;
+
 
     // Encabezado con ICONO (emoji), NO imagen
     const headerIcon = ICON_BY_KIND[d.deviceKind] ?? "📟";
@@ -99,7 +101,16 @@ async function loadDevices() {
     renderDevices(applyFilters(devices));
   } catch (e) {
     console.error(e);
-    showToast("Error cargando dispositivos");
+    document.getElementById("devicesGrid").innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-danger">
+          <strong>Error cargando dispositivos:</strong><br>
+          ${String(e.message || e)}
+          <div class="mt-2 small text-muted">
+            Revisa la URL en <code>js/api.js</code> y que existan registros en MockAPI.
+          </div>
+        </div>
+      </div>`;
   }
 }
 
