@@ -40,7 +40,7 @@
   </footer>
 
   <!-- Importa helpers desde la raíz -->
-  <script src="../js/api.js"></script>
+<script src="../control/js/api.js"></script>
   <script>
   const POLL_MS = 2000;
 
@@ -85,7 +85,7 @@
         const when = x.ts ? new Date(x.ts).toLocaleString() : "—";
         const imgFile = statusImageFile(x.action);
         const stateHTML = imgFile
-          ? `<img src="../img/${imgFile}" alt="${x.action}" style="height:28px">`
+          ? `<img src="../control/img/${imgFile}" alt="${x.action}" style="height:28px">`
           : (x.action || "—");
         return `<tr><td>${when}</td><td>${stateHTML}</td></tr>`;
       }).join("") || `<tr><td colspan="2" class="text-muted">Sin historial</td></tr>`;
