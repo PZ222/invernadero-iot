@@ -2,6 +2,9 @@ let devices = [];
 let pollTimer = null;
 const POLL_MS = 2000;
 
+// Base de imágenes para Opción A (dentro de /control)
+const IMG_BASE = "control/img/";
+
 const gridEl   = document.getElementById("devicesGrid");
 const searchEl = document.getElementById("searchInput");
 const kindEl   = document.getElementById("kindFilter");
@@ -27,7 +30,7 @@ function applyFilters(list) {
   });
 }
 
-// Renderiza tarjetas
+// Render de tarjetas
 function renderDevices(list) {
   if (!list.length) {
     gridEl.innerHTML = `
@@ -44,17 +47,14 @@ function renderDevices(list) {
       </button>
     `).join("");
 
-    // Solo IMAGEN en la sección de Estatus
+    // IMAGEN de estatus (con base control/img/)
     const imgFile = statusImageFile(d.status);
-// Donde armas el HTML del estatus:
-const statusHTML = imgFile
-  ? `<img src="control/img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
-  : `<span class="badge text-bg-secondary">—</span>`;
+    const statusHTML = imgFile
+      ? `<img src="${IMG_BASE}${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
+      : `<span class="badge text-bg-secondary">—</span>`;
 
-
-    // Encabezado con ICONO (emoji), NO imagen
+    // Encabezado con ICONO (emoji)
     const headerIcon = ICON_BY_KIND[d.deviceKind] ?? "📟";
-
     const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
 
     return `
@@ -101,14 +101,12 @@ async function loadDevices() {
     renderDevices(applyFilters(devices));
   } catch (e) {
     console.error(e);
-    document.getElementById("devicesGrid").innerHTML = `
+    gridEl.innerHTML = `
       <div class="col-12">
         <div class="alert alert-danger">
           <strong>Error cargando dispositivos:</strong><br>
           ${String(e.message || e)}
-          <div class="mt-2 small text-muted">
-            Revisa la URL en <code>js/api.js</code> y que existan registros en MockAPI.
-          </div>
+          <div class="mt-2 small text-muted">Revisa la URL en <code>control/js/api.js</code> y que existan registros.</div>
         </div>
       </div>`;
   }
@@ -131,15 +129,10 @@ async function onActionClick(e) {
 
   try {
     const nowISO = new Date().toISOString();
-    const prevLog = Array.isArray(dev.statusLog) ? dev.statusLog.slice(-9) : []; // conserva 9 previos
+    const prevLog = Array.isArray(dev.statusLog) ? dev.statusLog.slice(-9) : [];
     const nextLog = [...prevLog, { ts: nowISO, action }];
 
-    const bodyUpdate = {
-      status: action,
-      lastUpdated: nowISO,
-      statusLog: nextLog
-    };
-
+    const bodyUpdate = { status: action, lastUpdated: nowISO, statusLog: nextLog };
     await apiPut(id, bodyUpdate);
     showToast(`Acción enviada: ${action}`);
     await loadDevices();
@@ -150,19 +143,16 @@ async function onActionClick(e) {
 }
 
 // Eventos UI
-searchEl.addEventListener("input", () => renderDevices(applyFilters(devices)));
-kindEl.addEventListener("change", () => renderDevices(applyFilters(devices)));
-reloadEl.addEventListener("click", loadDevices);
+document.getElementById("searchInput").addEventListener("input", () => renderDevices(applyFilters(devices)));
+document.getElementById("kindFilter").addEventListener("change", () => renderDevices(applyFilters(devices)));
+document.getElementById("reloadBtn").addEventListener("click", loadDevices);
 
 // Polling
 function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(loadDevices, POLL_MS);
 }
-function stopPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = null;
-}
 
 // init
 loadDevices().then(startPolling);
+

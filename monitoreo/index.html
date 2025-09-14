@@ -39,8 +39,8 @@
     </div>
   </footer>
 
-  <!-- Importa helpers desde la raíz -->
-<script src="../control/js/api.js"></script>
+  <!-- Importa helpers desde /control -->
+  <script src="../control/js/api.js"></script>
   <script>
   const POLL_MS = 2000;
 
@@ -53,10 +53,10 @@
   function renderCards(list){
     const el = document.getElementById("cards");
     el.innerHTML = (list||[]).map(d=>{
-      const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";    // encabezado = icono
-      const imgFile = statusImageFile(d.status);          // estatus = imagen
+      const icon = ICON_BY_KIND[d.deviceKind] ?? "📟";           // encabezado = icono
+      const imgFile = statusImageFile(d.status);                 // estatus = imagen
       const statusHTML = imgFile
-        ? `<img src="../img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
+        ? `<img src="../control/img/${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
         : `<span class="badge text-bg-secondary">—</span>`;
       const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
       return `<div class="col-12 col-md-6 col-lg-4">
