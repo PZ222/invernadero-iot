@@ -6,179 +6,72 @@
   <title>Invernadero Mini · Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-<nav class="navbar bg-white border-bottom sticky-top">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="#">Invernadero Mini · Admin</a>
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary btn-sm" href="../index.html">Control</a>
-      <a class="btn btn-outline-secondary btn-sm" href="../monitoreo/index.html">Monitoreo</a>
-    </div>
-  </div>
-</nav>
+<body data-bs-theme="dark" class="bg-dark text-light">
 
-<main class="container py-4">
-  <!-- Form crear/editar -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <h1 class="h5 mb-3" id="formTitle">Crear dispositivo</h1>
-      <form id="deviceForm" class="row g-3">
-        <input type="hidden" id="devId">
-        <div class="col-md-4">
-          <label class="form-label">Nombre</label>
-          <input id="name" class="form-control" required placeholder="Ventila Norte">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Tipo (deviceKind)</label>
-          <select id="deviceKind" class="form-select" required>
-            <option value="">—</option>
-            <option value="vent">vent (Ventila)</option>
-            <option value="pump">pump (Riego)</option>
-            <option value="fan">fan (Extractor)</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Estatus inicial</label>
-          <input id="status" class="form-control" placeholder="cerrada / normal / off">
-        </div>
-        <div class="col-12 d-flex gap-2">
-          <button class="btn btn-primary" type="submit">Guardar</button>
-          <button class="btn btn-secondary" type="button" id="cancelEdit" hidden>Cancelar edición</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Tabla -->
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h6 m-0">Dispositivos</h2>
-        <button class="btn btn-outline-primary btn-sm" id="reloadBtn">Recargar</button>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead>
-            <tr>
-              <th>ID</th><th>Nombre</th><th>Tipo</th><th>Estatus</th><th>Actualizado</th><th class="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+  <!-- Navbar -->
+  <nav class="navbar bg-dark border-bottom sticky-top" data-bs-theme="dark">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-light" href="#">Invernadero Mini · Admin</a>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-light btn-sm" href="../index.html">Control</a>
+        <a class="btn btn-outline-light btn-sm" href="../monitoreo/index.html">Monitoreo</a>
       </div>
     </div>
-  </div>
-</main>
+  </nav>
 
-<footer class="bg-white border-top text-center py-3 mt-4">
-  <div class="container">
-    <small class="text-muted">
-      Proyecto IoT · Invernadero Mini <br>
-      Desarrollado por <strong>Rafael (manin)</strong> · 2025
-    </small>
-  </div>
-</footer>
+  <!-- Main -->
+  <main class="container py-4">
+    <h1 class="h4 mb-3">Gestión de Dispositivos IoT</h1>
+    <div class="table-responsive">
+      <table class="table table-dark table-striped table-bordered align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Estatus</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody">
+          <!-- Se llena dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </main>
 
-<script>
-const BASE = "https://68bb0e9184055bce63f10925.mockapi.io/api/v1/Invernadero_IoT";
-const form = document.getElementById("deviceForm");
-const devId = document.getElementById("devId");
-const nameEl = document.getElementById("name");
-const kindEl = document.getElementById("deviceKind");
-const statusEl = document.getElementById("status");
-const tbody = document.getElementById("tbody");
-const formTitle = document.getElementById("formTitle");
-const cancelEdit = document.getElementById("cancelEdit");
-const reloadBtn = document.getElementById("reloadBtn");
+  <!-- Footer -->
+  <footer class="bg-dark border-top text-center py-3 mt-4">
+    <div class="container">
+      <small class="text-secondary">
+        Proyecto IoT · Invernadero Mini <br>
+        Desarrollado por <strong class="text-light">Rafael (manin)</strong> · 2025
+      </small>
+    </div>
+  </footer>
 
-async function apiGet() {
-  const r = await fetch(BASE, {cache:"no-store"});
-  if (!r.ok) throw new Error("GET fail");
-  return r.json();
-}
-async function apiPost(body) {
-  const r = await fetch(BASE, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
-  if (!r.ok) throw new Error("POST fail");
-  return r.json();
-}
-async function apiPut(id, body) {
-  const r = await fetch(`${BASE}/${id}`, {method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
-  if (!r.ok) throw new Error("PUT fail");
-  return r.json();
-}
-async function apiDel(id) {
-  const r = await fetch(`${BASE}/${id}`, {method:"DELETE"});
-  if (!r.ok) throw new Error("DELETE fail");
-}
-
-function row(d){
-  const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
-  return `<tr>
-    <td>${d.id}</td>
-    <td>${d.name||"—"}</td>
-    <td>${d.deviceKind||"—"}</td>
-    <td>${d.status||"—"}</td>
-    <td>${updated}</td>
-    <td class="text-end">
-      <button class="btn btn-sm btn-outline-secondary" data-edit="${d.id}">Editar</button>
-      <button class="btn btn-sm btn-outline-danger" data-del="${d.id}">Eliminar</button>
-    </td>
-  </tr>`;
-}
-
-async function load(){
-  const list = await apiGet();
-  tbody.innerHTML = (list||[]).map(row).join("");
-  tbody.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
-  tbody.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>onDel(b.dataset.del));
-}
-
-function resetForm(){
-  devId.value=""; nameEl.value=""; kindEl.value=""; statusEl.value="";
-  formTitle.textContent = "Crear dispositivo";
-  cancelEdit.hidden = true;
-}
-
-function startEdit(id){
-  const tr = [...tbody.querySelectorAll("tr")].find(r => r.querySelector(`[data-edit="${id}"]`));
-  devId.value = id;
-  nameEl.value = tr.children[1].textContent;
-  kindEl.value = tr.children[2].textContent;
-  statusEl.value = tr.children[3].textContent;
-  formTitle.textContent = "Editar dispositivo";
-  cancelEdit.hidden = false;
-}
-
-async function onDel(id){
-  if (!confirm("¿Eliminar dispositivo?")) return;
-  await apiDel(id);
-  await load();
-}
-
-form.onsubmit = async (e)=>{
-  e.preventDefault();
-  const now = new Date().toISOString();
-  const payload = {
-    name: nameEl.value.trim(),
-    deviceKind: kindEl.value,
-    status: statusEl.value.trim(),
-    lastUpdated: now,
-  };
-  if (!devId.value) {
-    payload.createdAt = now;
-    payload.statusLog = [];
-    await apiPost(payload);
-  } else {
-    await apiPut(devId.value, payload);
+  <!-- Scripts -->
+  <script src="../control/js/api.js"></script>
+  <script>
+  async function loadAdmin(){
+    try{
+      const data = await apiGet("");
+      const tbody = document.getElementById("adminTableBody");
+      tbody.innerHTML = data.map(d=>`
+        <tr>
+          <td>${d.id}</td>
+          <td>${d.name||"(sin nombre)"}</td>
+          <td>${d.deviceKind||"—"}</td>
+          <td>${d.status||"—"}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-warning">Editar</button>
+            <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+          </td>
+        </tr>
+      `).join("");
+    }catch(e){ console.error(e); }
   }
-  resetForm();
-  await load();
-};
-cancelEdit.onclick = resetForm;
-reloadBtn.onclick = load;
-
-load();
-</script>
+  loadAdmin();
+  </script>
 </body>
 </html>
-

@@ -2,7 +2,7 @@ let devices = [];
 let pollTimer = null;
 const POLL_MS = 2000;
 
-// Base de imágenes para Opción A (dentro de /control)
+// Base de imágenes (Opción A: dentro de /control)
 const IMG_BASE = "control/img/";
 
 const gridEl   = document.getElementById("devicesGrid");
@@ -30,36 +30,33 @@ function applyFilters(list) {
   });
 }
 
-// Render de tarjetas
 function renderDevices(list) {
   if (!list.length) {
     gridEl.innerHTML = `
       <div class="col-12">
-        <div class="alert alert-light border text-center">No hay dispositivos. Crea alguno desde Admin.</div>
+        <div class="alert alert-dark border border-secondary text-center">No hay dispositivos. Crea alguno desde Admin.</div>
       </div>`;
     return;
   }
 
   gridEl.innerHTML = list.map(d => {
     const actions = (ACTIONS_BY_KIND[d.deviceKind] ?? []).map(a => `
-      <button class="btn btn-sm btn-outline-primary btn-action" data-action="${a}" data-id="${d.id}">
+      <button class="btn btn-sm btn-outline-light btn-action" data-action="${a}" data-id="${d.id}">
         ${a}
       </button>
     `).join("");
 
-    // IMAGEN de estatus (con base control/img/)
     const imgFile = statusImageFile(d.status);
     const statusHTML = imgFile
       ? `<img src="${IMG_BASE}${imgFile}" alt="${d.status}" class="img-fluid" style="max-height:60px">`
       : `<span class="badge text-bg-secondary">—</span>`;
 
-    // Encabezado con ICONO (emoji)
     const headerIcon = ICON_BY_KIND[d.deviceKind] ?? "📟";
     const updated = d.lastUpdated ? new Date(d.lastUpdated).toLocaleString() : "—";
 
     return `
       <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-device shadow-sm">
+        <div class="card card-device shadow-sm bg-dark text-light border-secondary">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="device-icon" style="font-size:2rem">${headerIcon}</div>
@@ -120,7 +117,6 @@ async function onActionClick(e) {
   const dev = devices.find(d => String(d.id) === String(id));
   if (!dev) return;
 
-  // Reglas lógicas simples para ventila
   const s = String(dev.status || "").toLowerCase();
   if (dev.deviceKind === "vent") {
     if (action === "abrir" && (s.includes("abierta") || s === "abrir")) { showToast("La ventila ya está abierta"); return; }
@@ -141,6 +137,21 @@ async function onActionClick(e) {
     showToast("No se pudo actualizar el dispositivo");
   }
 }
+
+// Eventos UI
+searchEl.addEventListener("input", () => renderDevices(applyFilters(devices)));
+kindEl.addEventListener("change", () => renderDevices(applyFilters(devices)));
+reloadEl.addEventListener("click", loadDevices);
+
+// Polling
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(loadDevices, POLL_MS);
+}
+
+// init
+loadDevices().then(startPolling);
+
 
 // Eventos UI
 document.getElementById("searchInput").addEventListener("input", () => renderDevices(applyFilters(devices)));
